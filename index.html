@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>旅遊景點網 | Tourist Attractions</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div id="app">
+      <h3>Vue3旅遊網資訊練習<span>（資料來源見置底）</span></h3>
+      <page :total-page="totalPage" :current-page="currentPage" @change-page="changePage"></page>
+      <card :card-data="filteredCards"></card>
+      <page :total-page="totalPage" :current-page="currentPage" @change-page="changePage"></page>
+      <ul>
+        <li>資料來源：</li>
+        <li>API連結位址：https://raw.githubusercontent.com/hexschool/KCGTravel/refs/heads/master/datastore_search.json</li>
+        <li> API站點：高雄城市資料平台 https://api.kcg.gov.tw/ServiceList/Detail/9c8e1450-e833-499c-8320-29b36b7ace5c</li>
+        <li>https://api.kcg.gov.tw/api/service/Get/9c8e1450-e833-499c-8320-29b36b7ace5c</li>
+      </ul>
+    </div>
+  </div>
+
+  <style>
+    h3{
+      text-align: center;
+    }
+    h3 span{
+      font-size: 18px;
+    }
+    .img-cover {
+	    object-fit: cover;
+    }
+  </style>
+  
+  <script type="module">
+    const app = Vue.createApp({
+      data() {
+        return {
+          data: [],
+          currentPage: 1,
+          cardsPerPage: 12
+        };
+      },
+      computed: {
+        filteredCards() {
+          const cardStart = (this.currentPage - 1) * this.cardsPerPage;
+          const cardEnd = cardStart + this.cardsPerPage;
+          return this.data.slice(cardStart, cardEnd);
+        },
+        totalPage() {
+          return Math.ceil(this.data.length / this.cardsPerPage);
+        }
+      },
+      methods: {
+        getApiData() {
+          const jsonUrl = "https://raw.githubusercontent.com/hexschool/KCGTravel/refs/heads/master/datastore_search.json";
+          fetch(jsonUrl, {method: "get"})
+            .then((response) => response.json())
+            .then((data) => (this.data = data.result.records))
+            .catch((err) => console.log("API請求失敗", err));
+        },
+        changePage(page) {
+          this.currentPage = page;
+          this.$nextTick(() => window.scrollTo(0, 0));
+        }
+      },
+      created() {
+        this.getApiData();
+      }
+    });
+    app.component("card", {
+      props: ["card-data"],
+      template: `<div class="row">
+                <div class="col-md-6 py-2" v-for="item in cardData" :key="item.Id">
+                  <div class="card">
+                    <div class="card bg-dark text-white text-left">
+                      <img class="card-img-top img-cover" height="155" :alt="item.Name" :src="item.Picture1">
+                      <div class="card-img-overlay d-flex justify-content-between align-items-end p-0 px-3" style="background-color: rgba(0, 0, 0, .2)">
+                        <h5 class="card-img-title-lg">{{ item.Name }}</h5><h5 class="card-img-title-sm">{{ item.Zone }}</h5>
+                      </div>
+                    </div>
+                    <div class="card-body text-left">
+                      <p class="card-text"><i class="far fa-clock fa-clock-time"></i>&nbsp;{{ item.Opentime }}</p>
+                      <p class="card-text"><i class="fas fa-map-marker-alt fa-map-gps"></i>&nbsp;{{ item.Add }}</p>
+                      <p class="card-text"><i class="fas fa-mobile-alt fa-mobile"></i>&nbsp;{{ item.Tel }}</p>
+                      <div v-if="item.Ticketinfo">
+                        <p class="card-text"><i class="fas fa-tags text-warning"></i>&nbsp;{{ item.Ticketinfo }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>`
+    });
+    app.component("page", {
+      props: ["total-page", "current-page"],
+      emits: ["change-page"],
+      template: `<div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Page navigation example">
+                  <ul class="pagination">
+                    <li class="page-item" :class="{'disabled': currentPage === 1}"><a class="page-link" href="#" @click.prevent="$emit('change-page', currentPage - 1)"><i class="fas fa-chevron-left fa-lg"></i></a></li>
+                    <li class="page-item" :class="{'active': currentPage === page}" v-for="page in totalPage" :key="page" ><a class="page-link" href="#" @click.prevent="$emit('change-page', page)" >{{ page }}</a></li>
+                    <li class="page-item" :class="{'disabled': currentPage === totalPage}"><a class="page-link" href="#" @click.prevent="$emit('change-page', currentPage + 1)"><i class="fas fa-chevron-right fa-lg"></i></a></li>
+                  </ul>
+                </nav>
+              </div>`
+    });
+    
+    app.mount("#app");
+  </script>
+  
+</body>
+</html>
